@@ -24,7 +24,7 @@ q_init = (50,50) #(x,y)
 q_delta = 1
 
 #number of iterations
-K = 500
+K = 5000
 
 #graph dictionary, key = coordinates, value = parent
 G = {}
