@@ -10,8 +10,8 @@ import math
 dom_y = 100
 dom_x = 100
 q_init = (10,10) #(x,y)
+q_goal = (90,90)
 q_delta = 0.5
-q_goal = (75,75)
 
 #graph dictionary, key = coordinates, value = parent
 G = {}
@@ -26,7 +26,6 @@ def generate_circles(num, mean, std):
     """
     This function generates /num/ random circles with a radius mean defined by
     /mean/ and a standard deviation of /std/.
-
     The circles are stored in a num x 3 sized array. The first column is the
     circle radii and the second two columns are the circle x and y locations.
     """
@@ -38,7 +37,8 @@ def generate_circles(num, mean, std):
     return circles
 
 # generate circles:
-world = generate_circles(10, 8, 3)
+world = generate_circles(20, 4, 1)
+#world = [(8,25,25),(8,25,75),(8,50,50),(8,75,25),(8,75,75)]
 
 #find the euclidean distance between two nodes
 def euclid(node1, node2):
@@ -48,11 +48,14 @@ def euclid(node1, node2):
 
 #find the nearest vertex given target node
 def fnv(target):
-	mindist = math.sqrt((dom_y**2)+(dom_x**2))
+	mindist = -1
 	nv = (dom_y+1,dom_x+1)
 	for coord in G.keys():
 		dist = euclid(target, coord)
-		if(dist < mindist):
+		if(mindist == -1):
+			mindist = dist
+			nv = coord
+		elif(dist < mindist):
 			mindist = dist
 			nv = coord
 	return nv
@@ -69,12 +72,18 @@ def collcheck(node1, node2):
 	for circ in world:
 		u = findu(circ, node1, node2)
 		inx = node1[0]+(u*(node2[0]-node1[0]))
-		iny = node1[1]+(u*(node2[1]-node1[0]))
-		dist2circ = euclid((inx,iny),circ)
+		iny = node1[1]+(u*(node2[1]-node1[1]))
+		dist2circ = euclid((inx,iny),(circ[1],circ[2]))
 		#collision detected due to distance
 		if(dist2circ <= circ[0]):
 			return True
 	return False
+
+#find the new node given q_near and q_rand
+def findnew(near, rand):
+	x = (rand[0]-near[0])*q_delta
+	y = (rand[1]-near[1])*q_delta
+	return (near[0]+x, near[1]+y)
 
 found = False
 counter = 0
@@ -89,16 +98,17 @@ while(not found):
 		q_near = fnv(q_rand)
 
 		if(not collcheck(q_near,q_rand)):
+			temp = findnew(q_near,q_rand)
 			#add q_new to G with q_near as the parent
-			G[q_rand] = q_near
+			G[temp] = q_near
 			#add edge from q_new to q_near
-			E.append((q_near, q_rand))
+			E.append((q_near, temp))
 
-		#check if straight line path to goal exists from new node
-		if(not collcheck(q_rand,q_goal)): #path to goal available
-			G[q_goal] = q_rand
-			E.append((q_rand, q_goal))
-			found = True
+			#check if straight line path to goal exists from new node
+			if(not collcheck(temp,q_goal)): #path to goal available
+				G[q_goal] = temp
+				E.append((temp, q_goal))
+				found = True
 
 verts = []
 codes = []
